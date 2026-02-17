@@ -22,7 +22,7 @@ async def main():
         logging.exception("Bot polling failed")
         raise
     finally:
-        print("Shutting down bot...")
+
         await bot.session.close()
 
 
