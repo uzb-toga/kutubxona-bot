@@ -1,0 +1,13 @@
+TOKEN = "8515017820:AAESulN4khMfmtcr2Im7nlwOO0FRKic4uMo"
+OWNER_ADMIN =7974294333
+ADMIN_PASSWORD = "bek"
+
+DB_USER = "postgres"
+DB_PASSWORD = "jasurbek"
+DB_NAME = "server"
+DB_HOST = "localhost"
+DB_PORT = 5432
+
+PROXY = None
+
+REQUEST_TIMEOUT = 60
