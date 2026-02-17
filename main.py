@@ -22,9 +22,9 @@ async def main():
         logging.exception("Bot polling failed")
         raise
     finally:
+        print("Shutting down bot...")
         await bot.session.close()
 
 
 if __name__ == "__main__":
     asyncio.run(main())
-    
