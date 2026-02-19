@@ -24,6 +24,38 @@ async def connect_db():
     """)
 
     await db.execute("""
+        CREATE TABLE IF NOT EXISTS roles (
+            id SERIAL PRIMARY KEY,
+            name VARCHAR(50) UNIQUE,
+            description VARCHAR(255),
+            permissions VARCHAR(500)
+        )
+    """)
+
+    await db.execute("""
+        CREATE TABLE IF NOT EXISTS user_roles (
+            id SERIAL PRIMARY KEY,
+            user_id BIGINT REFERENCES users(telegram_id) ON DELETE CASCADE,
+            role_id INTEGER REFERENCES roles(id) ON DELETE CASCADE,
+            UNIQUE(user_id, role_id)
+        )
+    """)
+
+    # Create default roles
+    existing_roles = await db.fetchval("SELECT COUNT(*) FROM roles")
+    if existing_roles == 0:
+        roles_data = [
+            ('user', "Oddiy foydalanuvchi", "view_books,search"),
+            ('moderator', "Moderator", "view_books,search,manage_books"),
+            ('admin', "Administrator", "view_books,search,manage_books,manage_users,manage_roles")
+        ]
+        for role_name, description, permissions in roles_data:
+            await db.execute(
+                "INSERT INTO roles (name, description, permissions) VALUES ($1, $2, $3)",
+                role_name, description, permissions
+            )
+
+    await db.execute("""
         CREATE TABLE IF NOT EXISTS books (
             id SERIAL PRIMARY KEY,
             code VARCHAR(50) UNIQUE,
@@ -365,6 +397,51 @@ async def close_db():
         await db.close()
         db = None
         print("✅ DB closed")
+
+# -------- Role Management Functions --------
+async def add_user_role(user_id: int, role_name: str):
+    role = await db.fetchrow("SELECT id FROM roles WHERE name=$1", role_name)
+    if role:
+        try:
+            await db.execute(
+                "INSERT INTO user_roles (user_id, role_id) VALUES ($1, $2)",
+                user_id, role['id']
+            )
+            return True
+        except:
+            return False
+    return False
+
+async def remove_user_role(user_id: int, role_name: str):
+    await db.execute("""
+        DELETE FROM user_roles 
+        WHERE user_id=$1 AND role_id=(SELECT id FROM roles WHERE name=$2)
+    """, user_id, role_name)
+
+async def get_user_roles(user_id: int):
+    roles = await db.fetch("""
+        SELECT r.name, r.description, r.permissions
+        FROM user_roles ur
+        JOIN roles r ON ur.role_id = r.id
+        WHERE ur.user_id=$1
+    """, user_id)
+    return roles if roles else []
+
+async def has_permission(user_id: int, permission: str):
+    result = await db.fetchval("""
+        SELECT COUNT(*) FROM user_roles ur
+        JOIN roles r ON ur.role_id = r.id
+        WHERE ur.user_id=$1 AND r.permissions LIKE $2
+    """, user_id, f"%{permission}%")
+    return result > 0
+
+async def get_all_users():
+    return await db.fetch("SELECT telegram_id, name, is_admin, created_at FROM users ORDER BY created_at DESC")
+
+async def get_user_info(user_id: int):
+    user = await db.fetchrow("SELECT * FROM users WHERE telegram_id=$1", user_id)
+    roles = await get_user_roles(user_id)
+    return {'user': user, 'roles': roles}
 
 
 

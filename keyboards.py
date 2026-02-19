@@ -4,7 +4,7 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 def main_menu(is_admin=False):
     kb = [
         [InlineKeyboardButton(text="📚 Kitoblar", callback_data="books")],
-        [InlineKeyboardButton(text="� Qidirish", callback_data="search")],
+        [InlineKeyboardButton(text="🔍 Qidirish", callback_data="search")],
         [InlineKeyboardButton(text="🛒 Savat", callback_data="cart")],
         [InlineKeyboardButton(text="👤 Profil", callback_data="profile")]
     ]

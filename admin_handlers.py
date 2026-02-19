@@ -70,3 +70,30 @@ async def delete_book(call: CallbackQuery):
     await db.delete_book(code)
     await call.answer("✅ O'chirildi", show_alert=True)
     await view_books(call)
+@admin_router.callback_query(F.data == "admin_panel")
+async def admin_panel(call: CallbackQuery):
+    kb = [
+        [InlineKeyboardButton(text="➕ Kitob qo'shish", callback_data="add_book")],
+        [InlineKeyboardButton(text="📚 Barcha kitoblar", callback_data="view_books")],
+        [InlineKeyboardButton(text="👥 Rollri boshqarish", callback_data="manage_roles")],
+        [InlineKeyboardButton(text="📋 Barcha rollari", callback_data="view_roles")],
+        [InlineKeyboardButton(text="👨‍💼 Foydalanuvchilar", callback_data="view_users")],
+        [InlineKeyboardButton(text="🔙 Orqaga", callback_data="back")]
+    ]
+    await call.message.edit_text("👑 <b>Admin Panel</b>", reply_markup=InlineKeyboardMarkup(inline_keyboard=kb), parse_mode="HTML")
+
+@admin_router.callback_query(F.data == "view_users")
+async def view_users(call: CallbackQuery):
+    users = await db.get_all_users()
+    text = "👥 <b>Barcha Foydalanuvchilar:</b>\n\n"
+    for user in users[:20]:
+        status = "👑" if user['is_admin'] else "👤"
+        text += f"{status} {user['name']} (ID: {user['telegram_id']})\n"
+    
+    kb = [[InlineKeyboardButton(text="🔙 Orqaga", callback_data="admin_panel")]]
+    await call.message.edit_text(text, reply_markup=InlineKeyboardMarkup(inline_keyboard=kb), parse_mode="HTML")
+
+@admin_router.callback_query(F.data == "back")
+async def go_back(call: CallbackQuery):
+    from keyboards import admin_kb
+    await call.message.edit_text("👑 Admin bo'ldingiz", reply_markup=admin_kb)
